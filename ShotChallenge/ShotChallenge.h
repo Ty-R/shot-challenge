@@ -8,6 +8,17 @@
 
 constexpr auto plugin_version = stringify(VERSION_MAJOR) "." stringify(VERSION_MINOR) "." stringify(VERSION_PATCH) "." stringify(VERSION_BUILD);
 
+struct ChatMessage {
+    void* PRI;
+    void* Team;
+    wchar_t* PlayerName;
+    uint8_t PlayerNamePadding[0x8];
+    wchar_t* Message;
+    uint8_t MessagePadding[0x8];
+    uint8_t ChatChannel;
+    unsigned long bPreset: 1;
+};
+
 class ShotChallenge: public BakkesMod::Plugin::BakkesModPlugin, public SettingsWindowBase {
 	void onLoad() override;
 	void onUnload() override;
@@ -18,6 +29,7 @@ class ShotChallenge: public BakkesMod::Plugin::BakkesModPlugin, public SettingsW
     void onGameStart();
     void truncateShots();
     void loadShotFile();
+    void onMessage(ActorWrapper, void*);
     std::vector<std::string> shots;
     std::string nextKey = "F11";
     std::string backKey = "F9";
@@ -29,6 +41,8 @@ class ShotChallenge: public BakkesMod::Plugin::BakkesModPlugin, public SettingsW
     time_t seed;
     int shotCount = 10;
     bool sgEnabled = true;
+    bool scoreTrackingEnabled = false;
+    std::map<std::string, int> playerScores;
 
 public:
 	void RenderSettings() override;

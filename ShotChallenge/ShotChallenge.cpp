@@ -2,7 +2,7 @@
 #include <random>
 #include "ShotChallenge.h"
 
-BAKKESMOD_PLUGIN(ShotChallenge, "Shot Generator Plugin", "0.1", PLUGINTYPE_FREEPLAY)
+BAKKESMOD_PLUGIN(ShotChallenge, "Shot Generator Plugin", "0.1", PERMISSION_ALL)
 
 void ShotChallenge::onLoad() {
     cvarManager->registerCvar("sg_enabled", "1", "Enable SG")
@@ -37,7 +37,15 @@ void ShotChallenge::onLoad() {
     cvarManager->executeCommand("bind " + nextKey + " next_shot");
     cvarManager->executeCommand("bind " + backKey + " prev_shot");
 
-    gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.InitGame", std::bind(&ShotChallenge::onGameStart, this));
+    gameWrapper->HookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.BeginState", [this](std::string eventName) {
+        cvarManager->log("Online game started");
+        onGameStart();
+    });
+
+    gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.InitGame", [this](std::string eventName) {
+        cvarManager->log("Freeplay started");
+        onGameStart();
+    });
 
     gameWrapper->HookEventWithCaller<ActorWrapper>("Function TAGame.HUDBase_TA.OnChatMessage",
         std::bind(&ShotChallenge::onMessage, this, std::placeholders::_1, std::placeholders::_2));
@@ -53,7 +61,6 @@ void ShotChallenge::onMessage(ActorWrapper Caller, void* params) {
 
     if (params) {
         ChatMessage* message = (ChatMessage*)params;
-        cvarManager->log(message->Message);
         if (message->PlayerName == nullptr) return;
 
         std::wstring wPlayerName(message->PlayerName);
@@ -102,15 +109,16 @@ void ShotChallenge::truncateShots() {
 
 void ShotChallenge::onUnload() {
     gameWrapper->UnhookEvent("Function TAGame.GameEvent_Soccar_TA.InitGame");
-    gameWrapper->UnhookEvent("Function TAGame.HUDBase_TA.OnChatMessagee");
+    gameWrapper->UnhookEvent("Function TAGame.HUDBase_TA.OnChatMessage");
+    gameWrapper->UnhookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.BeginState");
 }
 
 void ShotChallenge::onGameStart() {
+    cvarManager->log("Setting up shots");
     shuffleShots();
     truncateShots();
     playerScores.clear();
     currentShotIndex = 0;
-    cvarManager->log("Game started, shots shuffled..");
 }
 
 void ShotChallenge::shuffleShots() {
@@ -162,7 +170,7 @@ void ShotChallenge::renderShot(CanvasWrapper canvas) {
     }
     else {
         canvas.SetPosition(Vector2F{ 0, 430.0 });
-        canvas.DrawString("Shots vector is empty or currentShotIndex out of bounds.", 2.0f, 2.0f);
+        canvas.DrawString("Shots not loaded.", 2.0f, 2.0f);
     }
 
     if (!playerScores.empty() && scoreTrackingEnabled) {

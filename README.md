@@ -20,6 +20,8 @@ ShotChallenge is a simple practice plugin designed to enhance your training sess
 
 To install the plugin, download it from the plugins directory (the `.dll` file) and place it in the BakkesMod plugins directory.
 
+Alternatively, building from source should just be a case of downloading the project, opening it in VS, and building it (e.g. `ctrl + b`). If for whatever reason this is not the case, I'd be happy to assist.
+
 #### Configuration & Usage
 
 Base shot list, and number of shots to show at a time, are configurable through the plugin settings (In-game: F2 -> Plugins -> ShotChallenge)

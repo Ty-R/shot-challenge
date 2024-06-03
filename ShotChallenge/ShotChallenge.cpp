@@ -24,9 +24,14 @@ void ShotChallenge::onLoad() {
             truncateShots();
         });
 
-    cvarManager->registerCvar("enable_scoring", "0", "Enable score tracking")
+    cvarManager->registerCvar("enable_scoring", "1", "Enable score tracking")
         .addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
             scoreTrackingEnabled = cvar.getBoolValue();
+        });
+
+    cvarManager->registerCvar("seed_window", "120", "Seed window adjustment")
+        .addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
+            seedWindow = cvar.getIntValue();
         });
 
     loadShotFile();
@@ -36,6 +41,11 @@ void ShotChallenge::onLoad() {
     cvarManager->registerNotifier("prev_shot", [this](std::vector<std::string> params) { prevShot(); }, "", 0);
     cvarManager->executeCommand("bind " + nextKey + " next_shot");
     cvarManager->executeCommand("bind " + backKey + " prev_shot");
+
+    cvarManager->registerNotifier("shuffle", [this](std::vector<std::string> args) {
+        shuffleShots();
+        truncateShots();
+    }, "", PERMISSION_ALL);
 
     gameWrapper->HookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.BeginState", [this](std::string eventName) {
         cvarManager->log("Online game started");
@@ -99,11 +109,11 @@ void ShotChallenge::truncateShots() {
     // Attemnpt to preserve shotCount but only if it's within bounds
     // Reset currentShotIndex as that's probably what we want anyway
 
-    if (shotCount > shots.size()) {
-        shotCount = shots.size();
+    if (shotCount > shuffledShots.size()) {
+        shotCount = shuffledShots.size();
     }
 
-    selectedShots.assign(shots.begin(), shots.begin() + shotCount);
+    selectedShots.assign(shuffledShots.begin(), shuffledShots.begin() + shotCount);
     currentShotIndex = 0;
 }
 
@@ -122,14 +132,14 @@ void ShotChallenge::onGameStart() {
 }
 
 void ShotChallenge::shuffleShots() {
+    shuffledShots = shots;
+
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
     time_t currentTime = std::chrono::system_clock::to_time_t(now);
 
-    // Round down by one minute to try and account for slight differences across clients.
-    // There's likely a better approach than using a timestamp (e.g. hooking into a game's ID, if such a thing exists)
-    seed = currentTime - (currentTime % 60);
+    seed = currentTime - (currentTime % seedWindow);
 
-    std::shuffle(shots.begin(), shots.end(), std::default_random_engine(static_cast<unsigned>(seed)));
+    std::shuffle(shuffledShots.begin(), shuffledShots.end(), std::default_random_engine(static_cast<unsigned>(seed)));
 }
 
 void ShotChallenge::nextShot() {

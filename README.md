@@ -1,5 +1,7 @@
 # ShotChallenge Plugin
 
+![20240601114845_1](https://github.com/Ty-R/shot-challenge/assets/2464702/4ba69ff0-e01b-4224-b60a-0234198aa151)
+
 ShotChallenge is a simple "multiplayer" practice plugin designed to enhance training sessions through friendly competition. It's great for those looking to improve their skills with structured and varied practice.
 
 * [Features](#features)
@@ -56,3 +58,7 @@ There isn't really a restriction for what a "shot" can be, you might want a regu
 While this is intended for multiple people to play together, there is no direct plugin-to-plugin communication happening.
 
 For players to see the same shuffled shots, they must ensure the same base list is being used by all players. If using custom base shot lists, the JSON file being used must be shared with the other players, and they must update their plugin settings to point to this file.
+
+![plugin-settings](https://github.com/Ty-R/shot-challenge/assets/2464702/34642bef-c479-48a6-872d-b80c94cf7852)
+
+

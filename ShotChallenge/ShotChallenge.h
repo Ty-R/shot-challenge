@@ -30,20 +30,24 @@ class ShotChallenge: public BakkesMod::Plugin::BakkesModPlugin, public SettingsW
     void truncateShots();
     void loadShotFile();
     void onMessage(ActorWrapper, void*);
+    int trimmedGUID();
+    void resetPlayerScores();
     std::vector<std::string> shots;         // Base list
     std::vector<std::string> shuffledShots; // Copy of base, to shuffle
     std::vector<std::string> selectedShots; // Sub-set of shuffled shots to show in-game
-    int currentShotIndex;                // Index of the currently selected shot
+    int currentShotIndex;                   // Index of the currently selected shot
     std::string nextKey = "F11";
     std::string backKey = "F9";
     std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
     std::string shotsFile = "shots.json";
     int seed;
     int shotCount = 10;
-    int seedWindow = 120;
     bool sgEnabled = true;
     bool scoreTrackingEnabled = true;
     std::map<std::string, int> playerScores;
+
+    std::string matchGUID;
+    std::string intifiedGUID;
 
 public:
 	void RenderSettings() override;

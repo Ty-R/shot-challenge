@@ -16,6 +16,7 @@
 
 #include <include/json.hpp>
 #include <fstream>
+#include <regex>
 
 using json = nlohmann::json;
 

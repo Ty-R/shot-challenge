@@ -1,20 +1,19 @@
 # ShotChallenge Plugin
 
-ShotChallenge is a simple practice plugin designed to enhance your training sessions by shuffling a list of shot challenges and displaying them on screen. It's great for those looking to improve their skills with structured and varied practice.
+ShotChallenge is a simple "multiplayer" practice plugin designed to enhance training sessions through friendly competition. It's great for those looking to improve their skills with structured and varied practice.
 
 * [Features](#features)
 * [Getting Started](#getting-started)
 * [Configuration & Usage](#configuration--usage)
 * [Base Shot Lists](#base-shot-lists)
-* [Considerations](#considerations)
+* [Multiplayer](#multiplayer)
 
 ## Features
 
-* **Shot Challenge Shuffling**: Randomly shuffles a list of shot challenges and displays them on screen
-* **Navigation**: Cycle through the challenges using F9 and F11
+* **Shuffled Shots**: Present a different list of shots (from the base list) each game
+* **Navigation**: Cycle through shuffled shots using F9 and F11
 * **Customisable Shot Lists**: Create a local file with your custom shot list and point the plugin to it via settings
 * **Score Tracking**: Keep track of scores through chat commands. Typing ++ will increment your score, and -- will decrement it, updating the scoreboard accordingly
-* **Multiplayer Synchronisation**: Shuffled shots, and scores, are visible to all players in the lobby providing they have the plugin and configuration
 
 ## Getting Started
 
@@ -26,13 +25,17 @@ Alternatively, building from source should just be a case of downloading the pro
 
 Base shot list, and number of shots to show at a time, are configurable through the plugin settings (In-game: F2 -> Plugins -> ShotChallenge)
 
-Once installed, and in-game, cycle through the list of shots using F9 and F11. Send chat messages to update scoreboards:
+Once installed, and in-game, cycle through the list of shots using F9 and F11. 
 
-* "++" will increment your own score by 1
-* "--" will decrement your own score by 1
-* "sc reset" will reset everyone's score
+Scoreboards are updated through the use of chat messages:
 
-Scoreboards will be synced if multiple players are in the same game.
+| Chat Message  | Result |
+| ------------- | ------------- |
+| ++  | Increments your score by 1  |
+| --  | Decrements your score by 1  |
+| sc reset  | Resets the scoreboard  |
+
+Requires chat to be visible.
 
 ## Base Shot Lists
 
@@ -48,10 +51,8 @@ A base shot list is all of the shots that the plugin will work with; it is what 
 
 There isn't really a restriction for what a "shot" can be, you might want a regular shot (e.g. "Breezi flick") a shot with nested challenges (e.g. "Kuxir pinch with 0 bounces faster than 100kph"), or not even a shot at all (e.g. "carry the ball for 30 seconds").
 
-## Considerations
+## Multiplayer
 
-There is no separate networking happening for "multiplayer", it is being achieved through a couple of tricks, and may be slightly fiddly as a result.
+While this is intended for multiple people to play together, there is no direct plugin-to-plugin communication happening.
 
-Seeing the same shuffled list of shots -- this is pseudorandom, and made deterministic through the use of a seed. The seed in this case is a slightly rounded down timestamp taken when the game starts. Since players would start the game at roughly the same time, the plugins will separately get the same seed, so their separate lists are shuffled the same way. A timestamp is used because this allows for a different shuffle across games.
-
-Seeing the same scores -- this is hooking into chat events. When a player sends a specific chat message, this is being picked up by the different plugin instances, so they can separate build the same scoreboard. This will NOT work for chat that is not visible (e.g. team chat)
+For players to see the same shuffled shots, they must ensure the same base list is being used by all players. If using custom base shot lists, the JSON file being used must be shared with the other players, and they must update their plugin settings to point to this file.

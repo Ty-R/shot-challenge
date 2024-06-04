@@ -6,10 +6,6 @@ void ShotChallenge::RenderSettings() {
         cvarManager->getCvar("sg_enabled").setValue(sgEnabled);
     }
 
-    if (ImGui::Checkbox("Enable score tracking (requires chat)", &scoreTrackingEnabled)) {
-        cvarManager->getCvar("enable_scoring").setValue(scoreTrackingEnabled);
-    }
-
     ImGui::Separator();
 
     if (ImGui::InputText("Shots File Path (absolute, no quotes)", &shotsFile)) {
@@ -18,20 +14,6 @@ void ShotChallenge::RenderSettings() {
 
     if (ImGui::SliderInt("Shot count per game", &shotCount, 1, shots.size())) {
         cvarManager->getCvar("sc_shot_count").setValue(shotCount);
-    }
-
-    ImGui::Separator();
-
-    ImGui::TextUnformatted("Seconds between shot re-shuffles. Lower values are quicker to re-shuffle but may be more inaccurate for multiplayer.");
-
-    if (ImGui::SliderInt("Seed window", &seedWindow, 30, 1800)) {
-        cvarManager->getCvar("seed_window").setValue(seedWindow);
-    }
-
-    if (ImGui::Button("Shuffle shots (per seed window)")) {
-        gameWrapper->Execute([this](GameWrapper* gw) {
-            cvarManager->executeCommand("shuffle");
-        });
     }
 
     ImGui::Separator();

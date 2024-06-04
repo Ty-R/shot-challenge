@@ -5,6 +5,19 @@
 BAKKESMOD_PLUGIN(ShotChallenge, "Shot Generator Plugin", "0.1", PERMISSION_ALL)
 
 void ShotChallenge::onLoad() {
+    shots = {
+        "Double touch",
+        "Flip reset",
+        "45 degree flick",
+        "Ground pinch",
+        "Wall pinch",
+        "Ground to air dribble",
+        "Off the wall air dribble",
+        "Musty flick",
+        "Ceiling pinch",
+        "180 backflip flick"
+    };
+
     cvarManager->registerCvar("sg_enabled", "1", "Enable SG")
 		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
 		    sgEnabled = cvar.getBoolValue();
@@ -16,7 +29,7 @@ void ShotChallenge::onLoad() {
             truncateShots();
         });
 
-    cvarManager->registerCvar("shots_file_path", "shots.json", "Shots filepath")
+    cvarManager->registerCvar("shots_file_path", shotsFile, "Shots filepath")
         .addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
             shotsFile = cvar.getStringValue();
             loadShotFile();
@@ -24,18 +37,8 @@ void ShotChallenge::onLoad() {
             truncateShots();
         });
 
-    cvarManager->registerCvar("enable_scoring", "1", "Enable score tracking")
-        .addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
-            scoreTrackingEnabled = cvar.getBoolValue();
-        });
-
-    cvarManager->registerCvar("seed_window", "120", "Seed window adjustment")
-        .addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
-            seedWindow = cvar.getIntValue();
-        });
-
     loadShotFile();
-
+    
     gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) { renderShot(canvas); });
     cvarManager->registerNotifier("next_shot", [this](std::vector<std::string> params) { nextShot(); }, "", 0);
     cvarManager->registerNotifier("prev_shot", [this](std::vector<std::string> params) { prevShot(); }, "", 0);
@@ -47,13 +50,8 @@ void ShotChallenge::onLoad() {
         truncateShots();
     }, "", PERMISSION_ALL);
 
-    gameWrapper->HookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.BeginState", [this](std::string eventName) {
+    gameWrapper->HookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.EndState", [this](std::string eventName) {
         cvarManager->log("Online game started");
-        onGameStart();
-    });
-
-    gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.InitGame", [this](std::string eventName) {
-        cvarManager->log("Freeplay started");
         onGameStart();
     });
 
@@ -63,8 +61,6 @@ void ShotChallenge::onLoad() {
 
 // https://github.com/0xleft/trnslt/blob/master/trnslt.cpp#L69
 void ShotChallenge::onMessage(ActorWrapper Caller, void* params) {
-    if (!scoreTrackingEnabled) { return; }
-
     // Track player score through the use of chat events.
     // This is because chat events (at least, non-team ones)
     // are visible to all clients, and can be acted upon.
@@ -85,7 +81,7 @@ void ShotChallenge::onMessage(ActorWrapper Caller, void* params) {
             playerScores[playerName]++;
         }
         else if (msg == "sc reset") {
-            playerScores.clear();
+            resetPlayerScores();
         }
     }
 }
@@ -118,35 +114,57 @@ void ShotChallenge::truncateShots() {
 }
 
 void ShotChallenge::onUnload() {
-    gameWrapper->UnhookEvent("Function TAGame.GameEvent_Soccar_TA.InitGame");
     gameWrapper->UnhookEvent("Function TAGame.HUDBase_TA.OnChatMessage");
     gameWrapper->UnhookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.BeginState");
+    // Control binds?
 }
 
 void ShotChallenge::onGameStart() {
     cvarManager->log("Setting up shots");
     shuffleShots();
     truncateShots();
-    playerScores.clear();
+    resetPlayerScores();
     currentShotIndex = 0;
+}
+
+void ShotChallenge::resetPlayerScores() {
+    playerScores.clear();
+    ServerWrapper game = gameWrapper->GetCurrentGameState();
+
+    auto players = game.GetPRIs();
+
+    for (auto player : players) {
+        std::string playerName = player.GetPlayerName().ToString();
+        playerScores[playerName] = 0;
+    }
+}
+
+int ShotChallenge::trimmedGUID() {
+    ServerWrapper game = gameWrapper->GetCurrentGameState();
+
+    if (game.IsNull()) { return 0; }
+
+    matchGUID = game.GetMatchGUID();
+    intifiedGUID = std::regex_replace(matchGUID, std::regex(R"([\D])"), "");
+
+    return std::stoi(intifiedGUID.substr(0, 5));
 }
 
 void ShotChallenge::shuffleShots() {
     shuffledShots = shots;
-
-    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-    time_t currentTime = std::chrono::system_clock::to_time_t(now);
-
-    seed = currentTime - (currentTime % seedWindow);
-
-    std::shuffle(shuffledShots.begin(), shuffledShots.end(), std::default_random_engine(static_cast<unsigned>(seed)));
+    seed = trimmedGUID();
+    std::shuffle(shuffledShots.begin(), shuffledShots.end(), std::default_random_engine(seed));
 }
 
 void ShotChallenge::nextShot() {
+    if (selectedShots.empty()) { return; }
+
     currentShotIndex = (currentShotIndex + 1) % selectedShots.size();
 }
 
 void ShotChallenge::prevShot() {
+    if (selectedShots.empty()) { return; }
+
     if (currentShotIndex == 0) {
         currentShotIndex = selectedShots.size() - 1;
     }
@@ -157,9 +175,7 @@ void ShotChallenge::prevShot() {
 
 void ShotChallenge::renderShot(CanvasWrapper canvas) {
     if (!sgEnabled) { return; }
-    if (!gameWrapper->IsInOnlineGame() && !gameWrapper->IsInFreeplay()) {
-        return;
-    }
+    if (!gameWrapper->IsInOnlineGame()) { return; }
 
     LinearColor colors;
     colors.R = 255;

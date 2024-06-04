@@ -6,30 +6,30 @@ ShotChallenge is a simple "multiplayer" practice plugin designed to enhance trai
 
 * [Features](#features)
 * [Getting Started](#getting-started)
-* [Configuration & Usage](#configuration--usage)
+  * [Configuration & Usage](#configuration--usage)
 * [Base Shot Lists](#base-shot-lists)
 * [Multiplayer](#multiplayer)
+  * [Issues](#issues)
 
 ## Features
 
 * **Shuffled Shots**: Present a different list of shots (from the base list) each game
-* **Navigation**: Cycle through shuffled shots using F9 and F11
-* **Customisable Shot Lists**: Create a local file with your custom shot list and point the plugin to it via settings
-* **Score Tracking**: Keep track of scores through chat commands. Typing ++ will increment your score, and -- will decrement it, updating the scoreboard accordingly
+* **Customisable Shot Lists**: Create your own shot lists to be shuffled/shown in game
+* **Score Tracking**: Keep track of scores through chat commands
 
 ## Getting Started
 
 To install the plugin, download it from the plugins directory (the `.dll` file) and place it in the BakkesMod plugins directory.
 
-Alternatively, building from source should just be a case of downloading the project, opening it in VS, and building it (e.g. `ctrl + b`). If for whatever reason this is not the case, I'd be happy to assist.
+Alternatively, building from source should just be a case of downloading the project, opening it in VS, and building it (e.g. `ctrl + b`).
 
-#### Configuration & Usage
+### Configuration & Usage
 
 Base shot list, and number of shots to show at a time, are configurable through the plugin settings (In-game: F2 -> Plugins -> ShotChallenge)
 
-Once installed, and in-game, cycle through the list of shots using F9 and F11. 
+Once installed, and in-game, cycle through the list of shots using F9 and F11. If these conflict, or are a bit out of the way, then reassign them through BakkesMod bindings.
 
-Scoreboards are updated through the use of chat messages:
+Scoreboards are visible to all players and are updated through the use of chat messages:
 
 | Chat Message  | Result |
 | ------------- | ------------- |
@@ -37,7 +37,8 @@ Scoreboards are updated through the use of chat messages:
 | --  | Decrements your score by 1  |
 | sc reset  | Resets the scoreboard  |
 
-Requires chat to be visible.
+> [!WARNING]  
+> Will NOT work if chat is restricted (e.g. team chat)
 
 ## Base Shot Lists
 
@@ -51,7 +52,8 @@ A base shot list is all of the shots that the plugin will work with; it is what 
 ]
 ```
 
-There isn't really a restriction for what a "shot" can be, you might want a regular shot (e.g. "Breezi flick") a shot with nested challenges (e.g. "Kuxir pinch with 0 bounces faster than 100kph"), or not even a shot at all (e.g. "carry the ball for 30 seconds").
+> [!TIP]
+> There isn't really a restriction for what a "shot" can be, you might want a regular shot (e.g. "Breezi flick") a shot with nested challenges (e.g. "Kuxir pinch with 0 bounces faster than 100kph"), or not even a shot at all (e.g. "carry the ball for 30 seconds").
 
 ## Multiplayer
 
@@ -61,4 +63,10 @@ For players to see the same shuffled shots, they must ensure the same base list 
 
 ![plugin-settings](https://github.com/Ty-R/shot-challenge/assets/2464702/34642bef-c479-48a6-872d-b80c94cf7852)
 
+### Issues
 
+If players are not seeing the same shots, there are two things to check:
+1. The seed. At the bottom of the plugin settings will be a number (`21122` in the case of the above screenshot) -- ensure this number is the same for all players in the game
+2. The base shot list. For players to see the same shots, in the same order, they must ensure the same base shot list is being used
+
+If issues persist, or aren't listed here, create an issue.

@@ -65,8 +65,12 @@ For players to see the same shuffled shots, they must ensure the same base list 
 
 ### Issues
 
-If players are not seeing the same shots, there are two things to check:
-1. The seed. At the bottom of the plugin settings will be a number (`21122` in the case of the above screenshot) -- ensure this number is the same for all players in the game
-2. The base shot list. For players to see the same shots, in the same order, they must ensure the same base shot list is being used
+**Not seeing the same shots as friends**
 
-If issues persist, or aren't listed here, create an issue.
+Likely cause is a different base shot list, double check they are the same for everyone. A second potential cause is a different seed, but the seed is based on the match GUID which _should_ be the same for all players in the lobby. The seed is visible in the settings panel (`21122` in the case of the previous screenshot).
+
+**Shots look like they refresh twice on game start**
+
+Known issue that exists as a result of the implementation - the first list of shots is from the previous game, and the second list is for the current game. I plan on improving this.
+
+If issues persist, or aren't listed here, please create an issue.

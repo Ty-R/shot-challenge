@@ -5,7 +5,7 @@
 BAKKESMOD_PLUGIN(ShotChallenge, "Shot Generator Plugin", "0.1", PERMISSION_ALL)
 
 void ShotChallenge::onLoad() {
-    shots = {
+    defaultShots = {
         "Double touch",
         "Flip reset",
         "45 degree flick",
@@ -36,8 +36,6 @@ void ShotChallenge::onLoad() {
             shuffleShots();
             truncateShots();
         });
-
-    loadShotFile();
     
     gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) { renderShot(canvas); });
     cvarManager->registerNotifier("next_shot", [this](std::vector<std::string> params) { nextShot(); }, "", 0);
@@ -45,18 +43,21 @@ void ShotChallenge::onLoad() {
     cvarManager->executeCommand("bind " + nextKey + " next_shot");
     cvarManager->executeCommand("bind " + backKey + " prev_shot");
 
-    cvarManager->registerNotifier("shuffle", [this](std::vector<std::string> args) {
+    gameWrapper->HookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.EndState", [this](std::string eventName) {
+        resetPlayerScores();
         shuffleShots();
         truncateShots();
-    }, "", PERMISSION_ALL);
-
-    gameWrapper->HookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.EndState", [this](std::string eventName) {
-        cvarManager->log("Online game started");
-        onGameStart();
+        playerScores.clear();
+        currentShotIndex = 0;
     });
 
     gameWrapper->HookEventWithCaller<ActorWrapper>("Function TAGame.HUDBase_TA.OnChatMessage",
         std::bind(&ShotChallenge::onMessage, this, std::placeholders::_1, std::placeholders::_2));
+
+    if (shotsFile.empty()) {
+        cvarManager->log("Loading default shots");
+        shots = defaultShots;
+    }
 }
 
 // https://github.com/0xleft/trnslt/blob/master/trnslt.cpp#L69
@@ -92,50 +93,12 @@ void ShotChallenge::loadShotFile() {
         json shotsJson;
         file >> shotsJson;
         shots = shotsJson.get<std::vector<std::string>>();
-        cvarManager->log("Loaded shots from: " + shotsFile);
+        cvarManager->log("Loaded shot file successfully");
         file.close();
     }
     else {
-        cvarManager->log("Failed to open file: " + shotsFile);
-    }
-}
-
-void ShotChallenge::truncateShots() {
-    // OOB territory.
-    // Attemnpt to preserve shotCount but only if it's within bounds
-    // Reset currentShotIndex as that's probably what we want anyway
-
-    if (shotCount > shuffledShots.size()) {
-        shotCount = shuffledShots.size();
-    }
-
-    selectedShots.assign(shuffledShots.begin(), shuffledShots.begin() + shotCount);
-    currentShotIndex = 0;
-}
-
-void ShotChallenge::onUnload() {
-    gameWrapper->UnhookEvent("Function TAGame.HUDBase_TA.OnChatMessage");
-    gameWrapper->UnhookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.BeginState");
-    // Control binds?
-}
-
-void ShotChallenge::onGameStart() {
-    cvarManager->log("Setting up shots");
-    shuffleShots();
-    truncateShots();
-    resetPlayerScores();
-    currentShotIndex = 0;
-}
-
-void ShotChallenge::resetPlayerScores() {
-    playerScores.clear();
-    ServerWrapper game = gameWrapper->GetCurrentGameState();
-
-    auto players = game.GetPRIs();
-
-    for (auto player : players) {
-        std::string playerName = player.GetPlayerName().ToString();
-        playerScores[playerName] = 0;
+        cvarManager->log("Failed to open file or no shot file specified; loading default shot list");
+        shots = defaultShots;
     }
 }
 
@@ -154,6 +117,29 @@ void ShotChallenge::shuffleShots() {
     shuffledShots = shots;
     seed = trimmedGUID();
     std::shuffle(shuffledShots.begin(), shuffledShots.end(), std::default_random_engine(seed));
+}
+
+void ShotChallenge::truncateShots() {
+    if (shuffledShots.empty()) { return; }
+
+    if (shotCount > shuffledShots.size()) {
+        shotCount = shuffledShots.size();
+    }
+
+    selectedShots.assign(shuffledShots.begin(), shuffledShots.begin() + shotCount);
+    currentShotIndex = 0;
+}
+
+void ShotChallenge::resetPlayerScores() {
+    playerScores.clear();
+    ServerWrapper game = gameWrapper->GetCurrentGameState();
+
+    auto players = game.GetPRIs();
+
+    for (auto player : players) {
+        std::string playerName = player.GetPlayerName().ToString();
+        playerScores[playerName] = 0;
+    }
 }
 
 void ShotChallenge::nextShot() {
@@ -212,4 +198,10 @@ void ShotChallenge::renderShot(CanvasWrapper canvas) {
             yOffset += 30.0f;
         }
     }
+}
+
+void ShotChallenge::onUnload() {
+    gameWrapper->UnhookEvent("Function TAGame.HUDBase_TA.OnChatMessage");
+    gameWrapper->UnhookEvent("Function GameEvent_Soccar_TA.WaitingForPlayers.BeginState");
+    // Control binds?
 }
